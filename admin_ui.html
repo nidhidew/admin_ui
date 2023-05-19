@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.css" />
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+    <title>Admin UI</title>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin UI</h1>
+
+    <button onclick="deleteSelectedRows()">Delete Selected Rows</button>
+
+    <table id="myTable" class="display">
+        <thead>
+            <tr>
+                <th></th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="memberTableBody">
+        </tbody>
+    </table>
+
+    <script>
+        function deleteMember(memberId) {
+            // Send an API request to delete the member with the given ID
+            console.log(`Deleting member with ID ${memberId}`);
+            // Add your delete API request code here
+
+            // Update the UI after successful deletion
+            const row = document.getElementById(`row_${memberId}`);
+            row.parentNode.removeChild(row);
+        }
+
+        function editMember(memberId) {
+            // Send an API request to edit the member with the given ID
+            console.log(`Editing member with ID ${memberId}`);
+            // Add your edit API request code here
+
+            // Update the UI after successful editing
+            const nameField = document.getElementById(`name_${memberId}`);
+            const emailField = document.getElementById(`email_${memberId}`);
+            const roleField = document.getElementById(`role_${memberId}`);
+
+            const newName = nameField.value;
+            const newEmail = emailField.value;
+            const newRole = roleField.value;
+
+            console.log(`New name: ${newName}`);
+            console.log(`New email: ${newEmail}`);
+            console.log(`New role: ${newRole}`);
+
+            // Update the member details in the UI
+            nameField.textContent = newName;
+            emailField.textContent = newEmail;
+            roleField.textContent = newRole;
+        }
+
+        function deleteSelectedRows() {
+            const table = $('#myTable').DataTable();
+            const selectedRows = table.rows({ selected: true }).data();
+
+            if (selectedRows.length === 0) {
+                alert('Please select rows to delete.');
+                return;
+            }
+
+            const confirmDelete = confirm('Are you sure you want to delete the selected rows?');
+            if (!confirmDelete) {
+                return;
+            }
+
+            selectedRows.each(function (rowData) {
+                const memberId = rowData[1]; // Assuming ID is in the second column
+                deleteMember(memberId);
+            });
+
+            // Clear the row selections
+            table.rows('.selected').deselect();
+        }
+
+        function getcall() {
+            fetch('https://geektrust.s3-ap-southeast-1.amazonaws.com/adminui-problem/members.json')
+                .then(response => response.json())
+                .then(response => {
+                    const memberTableBody = document.getElementById('memberTableBody');
+                    for (var key in response) {
+                        const row = document.createElement('tr');
+                        row.id = `row_${response[key].id}`;
+                        row.innerHTML = `
+                            <td><input type="checkbox" class="row-checkbox"></td>
+                            <td>${response[key].id}</td>
+                            <td><input id="name_${response[key].id}" type="text" value="${response[key].name}"></td>
+                            <td><input id="email_${response[key].id}" type="text" value="${response[key].email}"></td>
+                            <td><input id="role_${response[key].id}" type="text" value="${response[key].role}"></td>
+                            <td>
+                                <button onclick="editMember(${response[key].id})">
+                                    <span class="material-symbols-outlined">edit</span>
+                                </button>
+                                <button onclick="deleteMember(${response[key].id})">
+                                    <span class="material-symbols-outlined">delete</span>
+                                </button>
+                            </td>
+                        `;
+                        memberTableBody.appendChild(row);
+                    }
+                    $('#myTable').DataTable({
+                        columnDefs: [
+                            {
+                                orderable: false,
+                                targets: 0
+                            }
+                        ],
+                        select: {
+                            style: 'multi',
+                            selector: 'td:first-child'
+                        }
+                    }); // Initialize DataTables with row selection
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        getcall();
+    </script>
+</body>
+</html>
